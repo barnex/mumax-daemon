@@ -87,14 +87,13 @@ func mainloop(share map[string]float64) {
 		}
 	}
 
-	if job != "" {
-		jobLocked := job + lockExt
-		err := os.Rename(job, jobLocked) // lock job file
-		log.Println(err)
+	jobLocked := job + lockExt
+
+	if job != "" && os.Rename(job, jobLocked) == nil {
 		start := time.Now()
 		runJob(jobLocked, lock)
 		seconds := time.Since(start).Seconds()
-		err = os.Rename(jobLocked, job) // unlock job file
+		err := os.Rename(jobLocked, job) // unlock job file
 		log.Println(err)
 		decay(share)
 		share[que] += float64(seconds)
