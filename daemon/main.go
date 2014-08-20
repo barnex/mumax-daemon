@@ -22,6 +22,10 @@ var (
 	flag_gpu      = flag.Int("gpu", -1, "specify gpu number")
 )
 
+const (
+	lockExt = ".locked"
+)
+
 func main() {
 	flag.Parse()
 	go RunWatchdog()
@@ -84,9 +88,14 @@ func mainloop(share map[string]float64) {
 	}
 
 	if job != "" {
+		jobLocked := job + lockExt
+		err := os.Rename(job, jobLocked) // lock job file
+		log.Println(err)
 		start := time.Now()
-		runJob(job, lock)
+		runJob(jobLocked, lock)
 		seconds := time.Since(start).Seconds()
+		err = os.Rename(jobLocked, job) // unlock job file
+		log.Println(err)
 		decay(share)
 		share[que] += float64(seconds)
 	} else {
