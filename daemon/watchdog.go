@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -33,6 +34,7 @@ func RunWatchdog() {
 	for {
 		watchmutex.Lock()
 		if watchlock != "" && watchcmd != nil {
+			syscall.Sync()
 			_, err := os.Stat(watchlock)
 			if err != nil {
 				log.Println(err)

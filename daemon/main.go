@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -90,11 +91,13 @@ func mainloop(share map[string]float64) {
 	jobLocked := job + lockExt
 
 	if job != "" && os.Rename(job, jobLocked) == nil {
+		syscall.Sync()
 		start := time.Now()
 		runJob(jobLocked, lock)
 		seconds := time.Since(start).Seconds()
 		err := os.Rename(jobLocked, job) // unlock job file
 		log.Println(err)
+		syscall.Sync()
 		decay(share)
 		share[que] += float64(seconds)
 	} else {
@@ -138,6 +141,8 @@ func runJob(jobfile, lockdir string) {
 		return
 	}
 
+	syscall.Sync()
+
 	j, err2 := os.Open(jobfile)
 	if err2 != nil {
 		log.Println(err2)
@@ -171,7 +176,7 @@ func spawn(job Job, lockdir string) {
 
 	// all daemon messages go here
 	logout, err2 := os.OpenFile(lockdir+"/daemon.log",
-		os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+		os.O_CREATE|os.O_TRUNC|os.O_WRONLY|os.O_SYNC, 0666)
 	if err2 != nil {
 		log.Println(err2)
 		return
@@ -181,12 +186,15 @@ func spawn(job Job, lockdir string) {
 
 	// subprocess output goes here
 	stdout, err3 := os.OpenFile(lockdir+"/stdout",
-		os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+		os.O_CREATE|os.O_TRUNC|os.O_WRONLY|os.O_SYNC, 0666)
 	if err3 != nil {
 		fmt.Fprintln(logout, err3)
 		return
 	}
 	defer stdout.Close()
+
+	syscall.Sync()
+
 	cmd.Stdout = stdout
 	cmd.Stderr = stdout
 

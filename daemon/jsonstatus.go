@@ -25,7 +25,7 @@ func saveStartStatus(job *Job, lockdir string) {
 	status.StartTime = time.Now()
 	status.Status = 1
 
-	out, err := os.OpenFile(lockdir+"/status.json", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+	out, err := os.OpenFile(lockdir+"/status.json", os.O_CREATE|os.O_TRUNC|os.O_WRONLY|os.O_SYNC, 0666)
 	if err != nil {
 		log.Println(err)
 		return
@@ -55,11 +55,10 @@ func saveStopStatus(job *Job, lockdir string, exitstat int) {
 	status.Runtime = time.Since(status.StartTime)
 	status.Status = exitstat
 
-	out, err := os.OpenFile(lockdir+"/status.json", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+	out, err := os.OpenFile(lockdir+"/status.json", os.O_CREATE|os.O_TRUNC|os.O_WRONLY|os.O_SYNC, 0666)
 	if err != nil {
 		log.Println(err)
 	}
 	defer out.Close()
-
 	json.NewEncoder(out).Encode(&status)
 }
